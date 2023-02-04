@@ -28,8 +28,8 @@
 	// After that, remove ourselves from the mob seeing us, so we can qdel cleanly.
 	if(my_mob)
 		my_mob.ability_master = null
-		if(my_mob.client && my_mob.client.screen)
-			my_mob.client.screen -= src
+		if (my_mob.hud_used)
+			my_mob.hud_used.remove_screen(src)
 		my_mob = null
 
 /obj/screen/movable/ability_master/MouseDrop()
@@ -48,8 +48,8 @@
 /obj/screen/movable/ability_master/proc/toggle_open(var/forced_state = 0)
 	if(showing && (forced_state != 2)) // We are closing the ability master, hide the abilities.
 		for(var/obj/screen/ability/O in ability_objects)
-			if(my_mob && my_mob.client)
-				my_mob.client.screen -= O
+			if (my_mob?.hud_used)
+				my_mob.hud_used.remove_screen(O)
 //			O.handle_icon_updates = 0
 		showing = 0
 		overlays.len = 0
@@ -80,15 +80,14 @@
 		var/xpos = x_position + (x_position < 8 ? 1 : -1)*(i%7)
 		var/ypos = y_position + (y_position < 8 ? round(i/7) : -round(i/7))
 		A.screen_loc = "[encode_screen_X(xpos)]:[x_pix],[encode_screen_Y(ypos)]:[y_pix]"
-		if(my_mob && my_mob.client)
-			my_mob.client.screen += A
+		if(my_mob?.hud_used)
+			my_mob.hud_used.add_screen(A)
 //			A.handle_icon_updates = 1
 
 /obj/screen/movable/ability_master/proc/update_abilities(forced = 0, mob/user)
 	update_icon()
-	if(user && user.client)
-		if(!(src in user.client.screen))
-			user.client.screen += src
+	if (user?.hud_used && !(src in user.hud_used.misc_screens))
+		user.hud_used.add_screen(src)
 	var/i = 1
 	for(var/obj/screen/ability/ability in ability_objects)
 		ability.update_icon(forced)
@@ -134,7 +133,7 @@
 	new_button.ability_icon_state = name_given
 	new_button.update_icon(1)
 	ability_objects.Add(new_button)
-	if(my_mob.client)
+	if(my_mob.hud_used)
 		toggle_open(2) //forces the icons to refresh on screen
 
 /obj/screen/movable/ability_master/proc/remove_ability(var/obj/screen/ability/ability)
@@ -176,7 +175,7 @@
 	..()
 	if(ability_master)
 		ability_master.toggle_open(1)
-		client.screen -= ability_master
+		hud_used?.add_screen(ability_master)
 
 /mob/New()
 	..()
@@ -202,8 +201,8 @@
 /obj/screen/ability/Destroy()
 	if(ability_master)
 		ability_master.ability_objects -= src
-		if(ability_master.my_mob && ability_master.my_mob.client)
-			ability_master.my_mob.client.screen -= src
+		if(ability_master.my_mob?.hud_used)
+			ability_master.my_mob.hud_used.remove_screen(src)
 	if(ability_master && !ability_master.ability_objects.len)
 		ability_master.update_icon()
 //		qdel(ability_master)
@@ -327,7 +326,7 @@
 	if(arguments)
 		A.arguments_to_use = arguments
 	ability_objects.Add(A)
-	if(my_mob.client)
+	if(my_mob.hud_used)
 		toggle_open(2) //forces the icons to refresh on screen
 
 //Changeling Abilities
@@ -351,7 +350,7 @@
 	if(arguments)
 		A.arguments_to_use = arguments
 	ability_objects.Add(A)
-	if(my_mob.client)
+	if(my_mob.hud_used)
 		toggle_open(2) //forces the icons to refresh on screen
 
 
@@ -382,5 +381,5 @@
 	A.ability_icon_state = ability_icon_given
 	A.name = object_given.name
 	ability_objects.Add(A)
-	if(my_mob.client)
+	if(my_mob.hud_used)
 		toggle_open(2) //forces the icons to refresh on screen

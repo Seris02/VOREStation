@@ -2732,6 +2732,8 @@
 #include "code\modules\mob\dead\observer\observer.dm"
 #include "code\modules\mob\dead\observer\observer_vr.dm"
 #include "code\modules\mob\dead\observer\say.dm"
+#include "code\modules\mob\dual_control\dual_control.dm"
+#include "code\modules\mob\dual_control\login.dm"
 #include "code\modules\mob\freelook\chunk.dm"
 #include "code\modules\mob\freelook\eye.dm"
 #include "code\modules\mob\freelook\life.dm"

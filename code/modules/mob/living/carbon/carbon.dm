@@ -283,7 +283,7 @@
 			var/mob/living/carbon/human/H = src
 			var/datum/gender/T = gender_datums[H.get_visible_gender()] // make sure to cast to human before using get_gender() or get_visible_gender()!
 			if(istype(H)) show_ssd = H.species.show_ssd
-			if(show_ssd && !client && !teleop)
+			if(show_ssd && is_SSD() && !teleop)
 				M.visible_message("<span class='notice'>[M] shakes [src] trying to wake [T.him] up!</span>", \
 				"<span class='notice'>You shake [src], but [T.he] [T.does] not respond... Maybe [T.he] [T.has] S.S.D?</span>")
 			else if(lying || src.sleeping)

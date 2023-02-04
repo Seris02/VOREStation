@@ -68,10 +68,11 @@
 	name = "close"
 
 /obj/screen/close/Click()
+	var/mob/clicking = !isobserver(usr) && hud?.mymob ? hud.mymob : usr
 	if(master)
 		if(istype(master, /obj/item/weapon/storage))
 			var/obj/item/weapon/storage/S = master
-			S.close(usr)
+			S.close(clicking)
 	return 1
 
 
@@ -83,15 +84,16 @@
 	owner = null
 
 /obj/screen/item_action/Click()
-	if(!usr || !owner)
+	var/mob/clicking = !isobserver(usr) && hud?.mymob ? hud.mymob : usr
+	if(!clicking || !owner)
 		return 1
 	if(!usr.checkClickCooldown())
 		return
 
-	if(usr.stat || usr.restrained() || usr.stunned || usr.lying)
+	if(clicking.stat || clicking.restrained() || clicking.stunned || clicking.lying)
 		return 1
 
-	if(!(owner in usr))
+	if(!(owner in clicking))
 		return 1
 
 	owner.ui_action_click()
@@ -116,16 +118,17 @@
 	name = "storage"
 
 /obj/screen/storage/Click()
+	var/mob/clicking = !isobserver(usr) && hud?.mymob ? hud.mymob : usr
 	if(!usr.checkClickCooldown())
 		return 1
-	if(usr.stat || usr.paralysis || usr.stunned || usr.weakened)
+	if(clicking.stat || clicking.paralysis || clicking.stunned || clicking.weakened)
 		return 1
-	if (istype(usr.loc,/obj/mecha)) // stops inventory actions in a mech
+	if (istype(clicking.loc,/obj/mecha)) // stops inventory actions in a mech
 		return 1
 	if(master)
-		var/obj/item/I = usr.get_active_hand()
+		var/obj/item/I = clicking.get_active_hand()
 		if(I)
-			usr.ClickOn(master)
+			clicking.ClickOn(master)
 	return 1
 
 /obj/screen/zone_sel
@@ -138,7 +141,8 @@
 	var/mutable_appearance/selecting_appearance
 
 /obj/screen/zone_sel/Click(location, control,params)
-	if(isobserver(usr))
+	var/mob/clicking = !isobserver(usr) && hud?.mymob ? hud.mymob : usr
+	if(isobserver(clicking))
 		return
 
 	var/list/PL = params2list(params)
@@ -148,13 +152,14 @@
 	if(!choice)
 		return 1
 
-	return set_selected_zone(choice, usr)
+	return set_selected_zone(choice, clicking)
 
 /obj/screen/zone_sel/MouseEntered(location, control, params)
 	MouseMove(location, control, params)
 
 /obj/screen/zone_sel/MouseMove(location, control, params)
-	if(isobserver(usr))
+	var/mob/clicking = !isobserver(usr) && hud?.mymob ? hud.mymob : usr
+	if(isobserver(clicking))
 		return
 
 	var/list/PL = params2list(params)
@@ -186,7 +191,8 @@
 	plane = PLANE_PLAYER_HUD_ABOVE
 
 /obj/screen/zone_sel/MouseExited(location, control, params)
-	if(!isobserver(usr) && hovering_choice)
+	var/mob/clicking = !isobserver(usr) && hud?.mymob ? hud.mymob : usr
+	if(!isobserver(clicking) && hovering_choice)
 		vis_contents -= hover_overlays_cache[hovering_choice]
 		hovering_choice = null
 
@@ -249,39 +255,41 @@
 /obj/screen/Click(location, control, params)
 	..() // why the FUCK was this not called before
 	if(!usr)	return 1
+	var/mob/clicking = !isobserver(usr) && hud?.mymob ? hud.mymob : usr
+	var/mob/messenger = usr
 	switch(name)
 		if("toggle")
-			if(usr.hud_used.inventory_shown)
-				usr.hud_used.inventory_shown = 0
-				usr.client.screen -= usr.hud_used.other
+			if(clicking.hud_used.inventory_shown)
+				clicking.hud_used.inventory_shown = 0
+				clicking.hud_used.remove_screen(clicking.hud_used.other)
 			else
-				usr.hud_used.inventory_shown = 1
-				usr.client.screen += usr.hud_used.other
+				clicking.hud_used.inventory_shown = 1
+				clicking.hud_used.add_screen(clicking.hud_used.other)
 
-			usr.hud_used.hidden_inventory_update()
+			clicking.hud_used.hidden_inventory_update()
 
 		if("equip")
-			if (istype(usr.loc,/obj/mecha)) // stops inventory actions in a mech
+			if (istype(clicking.loc,/obj/mecha)) // stops inventory actions in a mech
 				return 1
-			if(ishuman(usr))
-				var/mob/living/carbon/human/H = usr
+			if(ishuman(clicking))
+				var/mob/living/carbon/human/H = clicking
 				H.quick_equip()
 
 		if("resist")
-			if(isliving(usr))
-				var/mob/living/L = usr
+			if(isliving(clicking))
+				var/mob/living/L = clicking
 				L.resist()
 
 		if("mov_intent")
-			if(isliving(usr))
-				if(iscarbon(usr))
-					var/mob/living/carbon/C = usr
+			if(isliving(clicking))
+				if(iscarbon(clicking))
+					var/mob/living/carbon/C = clicking
 					if(C.legcuffed)
-						to_chat(C, "<span class='notice'>You are legcuffed! You cannot run until you get [C.legcuffed] removed!</span>")
+						to_chat(messenger, "<span class='notice'>You are legcuffed! You cannot run until you get [C.legcuffed] removed!</span>")
 						C.m_intent = "walk"	//Just incase
 						C.hud_used.move_intent.icon_state = "walking"
 						return 1
-				var/mob/living/L = usr
+				var/mob/living/L = clicking
 				switch(L.m_intent)
 					if("run")
 						L.m_intent = "walk"
@@ -290,30 +298,30 @@
 						L.m_intent = "run"
 						L.hud_used.move_intent.icon_state = "running"
 		if("m_intent")
-			if(!usr.m_int)
-				switch(usr.m_intent)
+			if(!clicking.m_int)
+				switch(clicking.m_intent)
 					if("run")
-						usr.m_int = "13,14"
+						clicking.m_int = "13,14"
 					if("walk")
-						usr.m_int = "14,14"
+						clicking.m_int = "14,14"
 					if("face")
-						usr.m_int = "15,14"
+						clicking.m_int = "15,14"
 			else
-				usr.m_int = null
+				clicking.m_int = null
 		if("walk")
-			usr.m_intent = "walk"
-			usr.m_int = "14,14"
+			clicking.m_intent = "walk"
+			clicking.m_int = "14,14"
 		if("face")
-			usr.m_intent = "face"
-			usr.m_int = "15,14"
+			clicking.m_intent = "face"
+			clicking.m_int = "15,14"
 		if("run")
-			usr.m_intent = "run"
-			usr.m_int = "13,14"
+			clicking.m_intent = "run"
+			clicking.m_int = "13,14"
 		if("Reset Machine")
-			usr.unset_machine()
+			clicking.unset_machine()
 		if("internal")
-			if(iscarbon(usr))
-				var/mob/living/carbon/C = usr
+			if(iscarbon(clicking))
+				var/mob/living/carbon/C = clicking
 				if(!C.stat && !C.stunned && !C.paralysis && !C.restrained())
 					if(C.internal)
 						C.internal = null
@@ -329,7 +337,7 @@
 								no_mask = 1
 
 						if(no_mask)
-							to_chat(C, "<span class='notice'>You are not wearing a suitable mask or helmet.</span>")
+							to_chat(messenger, "<span class='notice'>You are not wearing a suitable mask or helmet.</span>")
 							return 1
 						else
 							var/list/nicename = null
@@ -420,157 +428,157 @@
 							else
 								to_chat(C, "<span class='notice'>You don't have a[breathes=="oxygen" ? "n oxygen" : addtext(" ",breathes)] tank.</span>")
 		if("act_intent")
-			usr.a_intent_change("right")
+			clicking.a_intent_change("right")
 		if(I_HELP)
-			usr.a_intent = I_HELP
-			if(ispAI(usr))
-				usr.a_intent_change(I_HELP)
+			clicking.a_intent = I_HELP
+			if(ispAI(clicking))
+				clicking.a_intent_change(I_HELP)
 			else
-				usr.hud_used.action_intent.icon_state = "intent_help"
+				clicking.hud_used.action_intent.icon_state = "intent_help"
 		if(I_HURT)
-			usr.a_intent = I_HURT
-			if(ispAI(usr))
-				usr.a_intent_change(I_HURT)
+			clicking.a_intent = I_HURT
+			if(ispAI(clicking))
+				clicking.a_intent_change(I_HURT)
 			else
-				usr.hud_used.action_intent.icon_state = "intent_harm"
+				clicking.hud_used.action_intent.icon_state = "intent_harm"
 		if(I_GRAB)
-			usr.a_intent = I_GRAB
-			if(ispAI(usr))
-				usr.a_intent_change(I_GRAB)
+			clicking.a_intent = I_GRAB
+			if(ispAI(clicking))
+				clicking.a_intent_change(I_GRAB)
 			else
-				usr.hud_used.action_intent.icon_state = "intent_grab"
+				clicking.hud_used.action_intent.icon_state = "intent_grab"
 		if(I_DISARM)
-			usr.a_intent = I_DISARM
-			if(ispAI(usr))
-				usr.a_intent_change(I_DISARM)
+			clicking.a_intent = I_DISARM
+			if(ispAI(clicking))
+				clicking.a_intent_change(I_DISARM)
 			else
-				usr.hud_used.action_intent.icon_state = "intent_disarm"
+				clicking.hud_used.action_intent.icon_state = "intent_disarm"
 
 		if("pull")
-			usr.stop_pulling()
+			clicking.stop_pulling()
 		if("throw")
-			if(!usr.stat && isturf(usr.loc) && !usr.restrained())
-				usr:toggle_throw_mode()
+			if(!clicking.stat && isturf(clicking.loc) && !clicking.restrained())
+				clicking:toggle_throw_mode()
 		if("drop")
-			if(usr.client)
-				usr.client.drop_item()
+			if(clicking.client)
+				clicking.client.drop_item()
 
 		if("module")
-			if(isrobot(usr))
-				var/mob/living/silicon/robot/R = usr
+			if(isrobot(clicking))
+				var/mob/living/silicon/robot/R = clicking
 //				if(R.module)
 //					R.hud_used.toggle_show_robot_modules()
 //					return 1
 				R.pick_module()
 
 		if("inventory")
-			if(isrobot(usr))
-				var/mob/living/silicon/robot/R = usr
+			if(isrobot(clicking))
+				var/mob/living/silicon/robot/R = clicking
 				if(R.module)
 					R.hud_used.toggle_show_robot_modules()
 					return 1
 				else
-					to_chat(R, "You haven't selected a module yet.")
+					to_chat(messenger, "You haven't selected a module yet.")
 
 		if("radio")
-			if(issilicon(usr))
-				usr:radio_menu()
+			if(issilicon(clicking))
+				clicking:radio_menu()
 		if("panel")
-			if(issilicon(usr))
-				usr:installed_modules()
+			if(issilicon(clicking))
+				clicking:installed_modules()
 
 		if("store")
-			if(isrobot(usr))
-				var/mob/living/silicon/robot/R = usr
+			if(isrobot(clicking))
+				var/mob/living/silicon/robot/R = clicking
 				if(R.module)
 					R.uneq_active()
 				else
-					to_chat(R, "You haven't selected a module yet.")
+					to_chat(messenger, "You haven't selected a module yet.")
 
 		if("module1")
-			if(istype(usr, /mob/living/silicon/robot))
-				usr:toggle_module(1)
+			if(istype(clicking, /mob/living/silicon/robot))
+				clicking:toggle_module(1)
 
 		if("module2")
-			if(istype(usr, /mob/living/silicon/robot))
-				usr:toggle_module(2)
+			if(istype(clicking, /mob/living/silicon/robot))
+				clicking:toggle_module(2)
 
 		if("module3")
-			if(istype(usr, /mob/living/silicon/robot))
-				usr:toggle_module(3)
+			if(istype(clicking, /mob/living/silicon/robot))
+				clicking:toggle_module(3)
 
 		if("AI Core")
-			if(isAI(usr))
-				var/mob/living/silicon/ai/AI = usr
+			if(isAI(clicking))
+				var/mob/living/silicon/ai/AI = clicking
 				AI.view_core()
 
 		if("Show Camera List")
-			if(isAI(usr))
-				var/mob/living/silicon/ai/AI = usr
+			if(isAI(clicking))
+				var/mob/living/silicon/ai/AI = clicking
 				var/camera = tgui_input_list(AI, "Pick Camera:", "Camera Choice", AI.get_camera_list())
 				AI.ai_camera_list(camera)
 
 		if("Track With Camera")
-			if(isAI(usr))
-				var/mob/living/silicon/ai/AI = usr
+			if(isAI(clicking))
+				var/mob/living/silicon/ai/AI = clicking
 				var/target_name = tgui_input_list(AI, "Pick Mob:", "Mob Choice", AI.trackable_mobs())
 				AI.ai_camera_track(target_name)
 
 		if("Toggle Camera Light")
-			if(isAI(usr))
-				var/mob/living/silicon/ai/AI = usr
+			if(isAI(clicking))
+				var/mob/living/silicon/ai/AI = clicking
 				AI.toggle_camera_light()
 
 		if("Crew Monitoring")
-			if(isAI(usr))
-				var/mob/living/silicon/ai/AI = usr
+			if(isAI(clicking))
+				var/mob/living/silicon/ai/AI = clicking
 				AI.subsystem_crew_monitor()
 
 		if("Show Crew Manifest")
-			if(isAI(usr))
-				var/mob/living/silicon/ai/AI = usr
+			if(isAI(clicking))
+				var/mob/living/silicon/ai/AI = clicking
 				AI.subsystem_crew_manifest()
 
 		if("Show Alerts")
-			if(isAI(usr))
-				var/mob/living/silicon/ai/AI = usr
+			if(isAI(clicking))
+				var/mob/living/silicon/ai/AI = clicking
 				AI.subsystem_alarm_monitor()
 
 		if("Announcement")
-			if(isAI(usr))
-				var/mob/living/silicon/ai/AI = usr
+			if(isAI(clicking))
+				var/mob/living/silicon/ai/AI = clicking
 				AI.ai_announcement()
 
 		if("Call Emergency Shuttle")
-			if(isAI(usr))
-				var/mob/living/silicon/ai/AI = usr
+			if(isAI(clicking))
+				var/mob/living/silicon/ai/AI = clicking
 				AI.ai_call_shuttle()
 
 		if("State Laws")
-			if(isAI(usr))
-				var/mob/living/silicon/ai/AI = usr
+			if(isAI(clicking))
+				var/mob/living/silicon/ai/AI = clicking
 				AI.ai_checklaws()
 
 		if("PDA - Send Message")
-			if(isAI(usr))
-				var/mob/living/silicon/ai/AI = usr
+			if(isAI(clicking))
+				var/mob/living/silicon/ai/AI = clicking
 				AI.aiPDA.start_program(AI.aiPDA.find_program(/datum/data/pda/app/messenger))
-				AI.aiPDA.cmd_pda_open_ui(usr)
+				AI.aiPDA.cmd_pda_open_ui(clicking)
 
 		if("PDA - Show Message Log")
-			if(isAI(usr))
-				var/mob/living/silicon/ai/AI = usr
+			if(isAI(clicking))
+				var/mob/living/silicon/ai/AI = clicking
 				AI.aiPDA.start_program(AI.aiPDA.find_program(/datum/data/pda/app/messenger))
-				AI.aiPDA.cmd_pda_open_ui(usr)
+				AI.aiPDA.cmd_pda_open_ui(clicking)
 
 		if("Take Image")
-			if(isAI(usr))
-				var/mob/living/silicon/ai/AI = usr
+			if(isAI(clicking))
+				var/mob/living/silicon/ai/AI = clicking
 				AI.take_image()
 
 		if("View Images")
-			if(isAI(usr))
-				var/mob/living/silicon/ai/AI = usr
+			if(isAI(clicking))
+				var/mob/living/silicon/ai/AI = clicking
 				AI.view_images()
 		else
 			return attempt_vr(src,"Click_vr",list(location,control,params)) //VOREStation Add - Additional things.
@@ -579,29 +587,30 @@
 /obj/screen/inventory/Click()
 	// At this point in client Click() code we have passed the 1/10 sec check and little else
 	// We don't even know if it's a middle click
+	var/mob/clicking = !isobserver(usr) && hud?.mymob ? hud.mymob : usr
 	if(!usr.checkClickCooldown())
 		return 1
-	if(usr.stat || usr.paralysis || usr.stunned || usr.weakened)
+	if(clicking.stat || clicking.paralysis || clicking.stunned || clicking.weakened)
 		return 1
-	if (istype(usr.loc,/obj/mecha)) // stops inventory actions in a mech
+	if (istype(clicking.loc,/obj/mecha)) // stops inventory actions in a mech
 		return 1
 	switch(name)
 		if("r_hand")
-			if(iscarbon(usr))
-				var/mob/living/carbon/C = usr
+			if(iscarbon(clicking))
+				var/mob/living/carbon/C = clicking
 				C.activate_hand("r")
 		if("l_hand")
-			if(iscarbon(usr))
-				var/mob/living/carbon/C = usr
+			if(iscarbon(clicking))
+				var/mob/living/carbon/C = clicking
 				C.activate_hand("l")
 		if("swap")
-			usr:swap_hand()
+			clicking:swap_hand()
 		if("hand")
-			usr:swap_hand()
+			clicking:swap_hand()
 		else
-			if(usr.attack_ui(slot_id))
-				usr.update_inv_l_hand(0)
-				usr.update_inv_r_hand(0)
+			if(clicking.attack_ui(slot_id))
+				clicking.update_inv_l_hand(0)
+				clicking.update_inv_r_hand(0)
 	return 1
 
 // Hand slots are special to handle the handcuffs overlay

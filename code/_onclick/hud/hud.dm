@@ -199,6 +199,9 @@ var/list/global_huds = list(
 	var/list/minihuds = list()
 
 	var/list/infodisplay = list()
+	var/list/misc_screens = list()
+
+	var/list/mob/viewers = list()
 
 /datum/hud/New(mob/owner)
 	mymob = owner
@@ -231,34 +234,106 @@ var/list/global_huds = list(
 
 /datum/hud/proc/show_to(var/mob/screenmob)
 	if (!mymob) return
-	screenmob = screenmob || mymob
 
-	if (!screenmob.client) return
-
-	clear_all_but_planemasters(screenmob)
-	screenmob.client.screen += other
-	screenmob.client.screen += adding + hotkeybuttons
-	screenmob.client.screen += infodisplay
-	screenmob.client.screen += other_important
-	screenmob.add_click_catcher()
-
-	hidden_inventory_update(screenmob)
-	persistant_inventory_update(screenmob)
+	if (screenmob != mymob)
+		viewers |= screenmob
+	if (screenmob.client) refresh_viewer(screenmob)
 	screenmob.reload_fullscreen()
 
-/datum/hud/proc/clear_all_but_planemasters(var/mob/screenmob)
-	if (!mymob) return
-	screenmob = screenmob || mymob
+/datum/hud/proc/remove_viewer(var/mob/screenmob, show_hud_after = TRUE)
+	if (!screenmob)
+		return
+	viewers -= screenmob
+	if (show_hud_after && screenmob.hud_used)
+		screenmob.hud_used.show_to(screenmob)
 
-	if (!screenmob.client) return
-	for (var/obj/screen/screen as anything in screenmob.client.screen)
-		if (istype(screen, /obj/screen/plane_master))
+/datum/hud/proc/refresh_viewers()
+	for (var/mob/M as anything in viewers)
+		if (!M)
+			viewers -= M
 			continue
-		screenmob.client.screen -= screen
+		if (!M.client || !mymob)
+			continue
+		refresh_viewer(M)
+
+/datum/hud/proc/refresh_viewer(var/mob/M) //unsafe
+	for (var/obj/screen/to_remove in M.client.screen)
+		M.client.screen -= to_remove
+	M.client.screen += hud_elements
+	M.client.screen += adding + hotkeybuttons
+	M.client.screen += M.client.void
+	M.client.screen += infodisplay
+	M.client.screen += misc_screens
+	if (inventory_shown)
+		M.client.screen += other
+	M.client.screen += other_important
+	M.client.screen += mymob?.plane_holder.plane_masters
+	hidden_inventory_update(M)
+	persistant_inventory_update(M)
+
+/datum/hud/proc/refresh_viewer_planes(var/mob/M)
+	for (var/obj/screen/plane_master/to_remove in M.client.screen)
+		M.client.screen -= to_remove
+	M.client.screen += mymob?.plane_holder?.plane_masters
+
+/datum/hud/proc/add_screen(var/obj/screen/screen)
+	if (!mymob || !screen) return
+	if (islist(screen))
+		for (var/obj/screen/s as anything in screen)
+			add_screen(s)
+		return
+	else if (!istype(screen))
+		return
+	screen.hud = src
+	LAZYOR(misc_screens, screen)
+	mymob.client?.screen += screen
+	for (var/mob/M as anything in viewers)
+		if (!M)
+			viewers -= M
+			continue
+		if (!M.client)
+			continue
+		M.client.screen |= screen
+
+/datum/hud/proc/remove_screen(var/obj/screen/screen)
+	if (!mymob || !screen) return
+	if (islist(screen))
+		for (var/obj/screen/s as anything in screen)
+			remove_screen(s)
+		return
+	else if (!istype(screen))
+		return
+	screen.hud = src
+	LAZYREMOVE(misc_screens, screen)
+	mymob.client?.screen -= screen
+	for (var/mob/M as anything in viewers)
+		if (!M)
+			viewers -= M
+			continue
+		if (!M.client)
+			continue
+		M.client.screen -= screen
+
+/datum/hud/proc/update_item(var/item, var/mob/screenmob)
+	if(!mymob) return
+	screenmob = screenmob || mymob
+	screenmob.client?.screen |= item
+	if (screenmob == mymob && length(viewers))
+		for (var/mob/M as anything in viewers)
+			if (!M)
+				viewers -= M
+				continue
+			update_item(item, M)
 
 /datum/hud/proc/hidden_inventory_update(var/mob/screenmob)
 	if(!mymob) return
 	screenmob = screenmob || mymob
+	if (screenmob == mymob && length(viewers))
+		for (var/mob/M as anything in viewers)
+			if (!M)
+				viewers -= M
+				continue
+			hidden_inventory_update(M)
 	if(ishuman(mymob))
 		var/mob/living/carbon/human/H = mymob
 		for(var/gear_slot in H.species.hud.gear)
@@ -345,6 +420,12 @@ var/list/global_huds = list(
 	if(!mymob)
 		return
 	screenmob = screenmob || mymob
+	if (screenmob == mymob && length(viewers))
+		for (var/mob/M as anything in viewers)
+			if (!M)
+				viewers -= M
+				continue
+			persistant_inventory_update(M)
 	if(ishuman(mymob))
 		var/mob/living/carbon/human/H = mymob
 		for(var/gear_slot in H.species.hud.gear)
@@ -410,9 +491,15 @@ var/list/global_huds = list(
 	mymob.create_mob_hud(src)
 
 	persistant_inventory_update()
+	force_screens_hud_update()
 	mymob.reload_fullscreen() // Reload any fullscreen overlays this mob has.
 	mymob.update_action_buttons()
 	reorganize_alerts()
+
+/datum/hud/proc/force_screens_hud_update()
+	for (var/obj/screen/screen as anything in adding|other|other_important|infodisplay)
+		if (screen)
+			screen.hud = src
 
 /mob/proc/create_mob_hud(datum/hud/HUD, apply_to_client = TRUE)
 	if(!client)
@@ -426,21 +513,17 @@ var/list/global_huds = list(
 	if(MH in minihuds)
 		return
 	minihuds += MH
-	if(mymob.client)
-		mymob.client.screen -= miniobjs
+	add_screen(miniobjs)
 	miniobjs += MH.get_screen_objs()
-	if(mymob.client)
-		mymob.client.screen += miniobjs
+	add_screen(miniobjs)
 
 /datum/hud/proc/remove_minihud(var/datum/mini_hud/MH)
 	if(!(MH in minihuds))
 		return
 	minihuds -= MH
-	if(mymob.client)
-		mymob.client.screen -= miniobjs
+	remove_screen(miniobjs)
 	miniobjs -= MH.get_screen_objs()
-	if(mymob.client)
-		mymob.client.screen += miniobjs
+	remove_screen(miniobjs)
 
 //Triggered when F12 is pressed (Unless someone changed something in the DMF)
 /mob/verb/button_pressed_F12(var/full = 0 as null)

@@ -529,15 +529,14 @@
 
 /mob/living/update_action_buttons()
 	if(!hud_used) return
-	if(!client) return
 
 	if(hud_used.hud_shown != 1)	//Hud toggled to minimal
 		return
 
-	client.screen -= hud_used.hide_actions_toggle
+	hud_used.remove_screen(hud_used.hide_actions_toggle)
 	for(var/datum/action/A in actions)
 		if(A.button)
-			client.screen -= A.button
+			hud_used.remove_screen(A.button)
 
 	if(hud_used.action_buttons_hidden)
 		if(!hud_used.hide_actions_toggle)
@@ -548,7 +547,7 @@
 			hud_used.hide_actions_toggle.screen_loc = hud_used.ButtonNumberToScreenCoords(1)
 			//hud_used.SetButtonCoords(hud_used.hide_actions_toggle,1)
 
-		client.screen += hud_used.hide_actions_toggle
+		hud_used.add_screen(hud_used.hide_actions_toggle)
 		return
 
 	var/button_number = 0
@@ -565,7 +564,7 @@
 
 		B.name = A.UpdateName()
 
-		client.screen += B
+		hud_used.add_screen(B)
 
 		if(!B.moved)
 			B.screen_loc = hud_used.ButtonNumberToScreenCoords(button_number)
@@ -578,7 +577,7 @@
 		if(!hud_used.hide_actions_toggle.moved)
 			hud_used.hide_actions_toggle.screen_loc = hud_used.ButtonNumberToScreenCoords(button_number+1)
 			//hud_used.SetButtonCoords(hud_used.hide_actions_toggle,button_number+1)
-		client.screen += hud_used.hide_actions_toggle
+		hud_used.add_screen(hud_used.hide_actions_toggle)
 
 // Returns a number to determine if something is harder or easier to hit than normal.
 /mob/living/proc/get_evasion()

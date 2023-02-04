@@ -1197,7 +1197,7 @@
 	if(status_flags & GODMODE)	return 0
 
 	//SSD check, if a logged player is awake put them back to sleep!
-	if(species.get_ssd(src) && !client && !teleop)
+	if(species.get_ssd(src) && is_SSD() && !teleop)
 		Sleeping(2)
 	if(stat == DEAD)	//DEAD. BROWN BREAD. SWIMMING WITH THE SPESS CARP
 		blinded = 1
@@ -1255,7 +1255,7 @@
 				handle_dreams()
 				if (mind)
 					//Are they SSD? If so we'll keep them asleep but work off some of that sleep var in case of stoxin or similar.
-					if(client || sleeping > 3)
+					if(!is_SSD() || sleeping > 3)
 						AdjustSleeping(-1)
 						throw_alert("asleep", /obj/screen/alert/asleep)
 				if( prob(2) && health && !hal_crit && client )

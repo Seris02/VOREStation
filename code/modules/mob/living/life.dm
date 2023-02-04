@@ -207,7 +207,7 @@
 			adjustEarDamage(-0.05,-1)
 
 /mob/living/handle_regular_hud_updates()
-	if(!client)
+	if(is_SSD())
 		return 0
 	..()
 

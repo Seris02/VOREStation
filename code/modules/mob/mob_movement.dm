@@ -201,6 +201,9 @@
 	if(!my_mob.canmove)
 		return
 
+	if (istype(my_mob, /mob/living/dual_control))
+		my_mob:move_controlling(n, direct)
+
 	// Relaymove could handle it
 	if(my_mob.machine)
 		var/result = my_mob.machine.relaymove(my_mob, direct)

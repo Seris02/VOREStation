@@ -9,6 +9,7 @@
 
 	var/size_multiplier = 1 //multiplier for the mob's icon size
 	var/accumulated_rads = 0 	// For radiation stuff.
+	var/list/mob/dual_controllers
 
 /mob/drop_location()
 	if(temporary_form)

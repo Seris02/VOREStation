@@ -168,8 +168,7 @@
 		owner.visible_message("<span class='danger'>\The [owner] aims \the [thing] at \the [target]!</span>")
 	log_and_message_admins("aimed \a [thing] at [key_name(target)].")
 
-	if(owner.client)
-		owner.client.add_gun_icons()
+	owner.add_gun_icons()
 	to_chat(target, "<span class='danger'>You now have a gun pointed at you. No sudden moves!</span>")
 	to_chat(target, "<span class='critical'>If you fail to comply with your assailant, you accept the consequences of your actions.</span>")
 	aiming_with = thing
@@ -202,14 +201,14 @@
 	if(!active)
 		cancel_aiming()
 
-	if(owner.client)
+	if(owner)
 		if(active)
 			to_chat(owner, "<span class='notice'>You will now aim rather than fire.</span>")
-			owner.client.add_gun_icons()
+			owner.add_gun_icons()
 		else
 			to_chat(owner, "<span class='notice'>You will no longer aim rather than fire.</span>")
-			owner.client.remove_gun_icons()
-		owner.gun_setting_icon.icon_state = "gun[active]"
+			owner.remove_gun_icons()
+		owner.gun_setting_icon?.icon_state = "gun[active]"
 
 /obj/aiming_overlay/proc/cancel_aiming(var/no_message = 0)
 	if(!aiming_with || !aiming_at)

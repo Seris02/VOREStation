@@ -1197,7 +1197,10 @@
 /datum/component/vore_panel/proc/vore_panel_click(source, location, control, params, user)
 	var/mob/living/owner = user
 	if(istype(owner) && owner.vorePanel)
-		INVOKE_ASYNC(owner.vorePanel, .proc/tgui_interact, user)
+		INVOKE_ASYNC(src, .proc/open_vore_panel, owner)
+
+/datum/component/vore_panel/proc/open_vore_panel(var/mob/living/owner)
+	owner.insidePanel()
 
 /**
  * Screen object for vore panel

@@ -1,12 +1,12 @@
 //These are called by the on-screen buttons, adjusting what the victim can and cannot do.
-/client/proc/add_gun_icons()
-	if(!usr) return 1 // This can runtime if someone manages to throw a gun out of their hand before the proc is called.
-	screen |= usr.item_use_icon
-	screen |= usr.gun_move_icon
-	screen |= usr.radio_use_icon
+/mob/proc/add_gun_icons()
+	if (!hud_used) return 1
+	hud_used.add_screen(item_use_icon)
+	hud_used.add_screen(gun_move_icon)
+	hud_used.add_screen(radio_use_icon)
 
-/client/proc/remove_gun_icons()
-	if(!usr) return 1 // Runtime prevention on N00k agents spawning with SMG
-	screen -= usr.item_use_icon
-	screen -= usr.gun_move_icon
-	screen -= usr.radio_use_icon
+/mob/proc/remove_gun_icons()
+	if (!hud_used) return 1
+	hud_used.remove_screen(item_use_icon)
+	hud_used.remove_screen(gun_move_icon)
+	hud_used.remove_screen(radio_use_icon)

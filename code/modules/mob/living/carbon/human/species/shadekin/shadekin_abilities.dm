@@ -36,7 +36,7 @@
 	var/darkness = 1
 	var/turf/T = get_turf(src)
 	if(!T)
-		to_chat(src,"<span class='warning'>You can't use that here!</span>")
+		to_chat(usr,"<span class='warning'>You can't use that here!</span>")
 		return FALSE
 
 	var/brightness = T.get_lumcount() //Brightness in 0.0 to 1.0
@@ -52,17 +52,17 @@
 	if(watcher>0)
 		ability_cost = ability_cost + ( 15 * watcher )
 	if(!(ability_flags & AB_PHASE_SHIFTED))
-		log_debug("[src] attempted to shift with [watcher] visible Carbons with a  cost of [ability_cost] in a darkness level of [darkness]")
+		log_debug("[usr] attempted to shift with [watcher] visible Carbons with a  cost of [ability_cost] in a darkness level of [darkness]")
 
 	var/datum/species/shadekin/SK = species
 	if(!istype(SK))
-		to_chat(src, "<span class='warning'>Only a shadekin can use that!</span>")
+		to_chat(usr, "<span class='warning'>Only a shadekin can use that!</span>")
 		return FALSE
 	else if(stat)
-		to_chat(src, "<span class='warning'>Can't use that ability in your state!</span>")
+		to_chat(usr, "<span class='warning'>Can't use that ability in your state!</span>")
 		return FALSE
 	else if(shadekin_get_energy() < ability_cost && !(ability_flags & AB_PHASE_SHIFTED))
-		to_chat(src, "<span class='warning'>Not enough energy for that ability!</span>")
+		to_chat(usr, "<span class='warning'>Not enough energy for that ability!</span>")
 		return FALSE
 
 	if(!(ability_flags & AB_PHASE_SHIFTED))
@@ -70,7 +70,7 @@
 	playsound(src, 'sound/effects/stealthoff.ogg', 75, 1)
 
 	if(!T.CanPass(src,T) || loc != T)
-		to_chat(src,"<span class='warning'>You can't use that here!</span>")
+		to_chat(usr,"<span class='warning'>You can't use that here!</span>")
 		return FALSE
 
 	forceMove(T)
@@ -179,16 +179,16 @@
 
 	var/datum/species/shadekin/SK = species
 	if(!istype(SK))
-		to_chat(src, "<span class='warning'>Only a shadekin can use that!</span>")
+		to_chat(usr, "<span class='warning'>Only a shadekin can use that!</span>")
 		return FALSE
 	else if(stat)
-		to_chat(src, "<span class='warning'>Can't use that ability in your state!</span>")
+		to_chat(usr, "<span class='warning'>Can't use that ability in your state!</span>")
 		return FALSE
 	else if(shadekin_get_energy() < ability_cost)
-		to_chat(src, "<span class='warning'>Not enough energy for that ability!</span>")
+		to_chat(usr, "<span class='warning'>Not enough energy for that ability!</span>")
 		return FALSE
 	else if(ability_flags & AB_PHASE_SHIFTED)
-		to_chat(src, "<span class='warning'>You can't use that while phase shifted!</span>")
+		to_chat(usr, "<span class='warning'>You can't use that while phase shifted!</span>")
 		return FALSE
 
 	var/list/viewed = oview(1)
@@ -196,15 +196,15 @@
 	for(var/mob/living/L in viewed)
 		targets += L
 	if(!targets.len)
-		to_chat(src,"<span class='warning'>Nobody nearby to mend!</span>")
+		to_chat(usr,"<span class='warning'>Nobody nearby to mend!</span>")
 		return FALSE
 
-	var/mob/living/target = tgui_input_list(src,"Pick someone to mend:","Mend Other", targets)
+	var/mob/living/target = tgui_input_list(usr,"Pick someone to mend:","Mend Other", targets)
 	if(!target)
 		return FALSE
 
 	target.add_modifier(/datum/modifier/shadekin/heal_boop,1 MINUTE)
-	playsound(src, 'sound/effects/EMPulse.ogg', 75, 1)
+	playsound(usr, 'sound/effects/EMPulse.ogg', 75, 1)
 	shadekin_adjust_energy(-ability_cost)
 	visible_message("<span class='notice'>\The [src] gently places a hand on \the [target]...</span>")
 	face_atom(target)
@@ -248,16 +248,16 @@
 
 	var/datum/species/shadekin/SK = species
 	if(!istype(SK))
-		to_chat(src, "<span class='warning'>Only a shadekin can use that!</span>")
+		to_chat(usr, "<span class='warning'>Only a shadekin can use that!</span>")
 		return FALSE
 	else if(stat)
-		to_chat(src, "<span class='warning'>Can't use that ability in your state!</span>")
+		to_chat(usr, "<span class='warning'>Can't use that ability in your state!</span>")
 		return FALSE
 	else if(shadekin_get_energy() < ability_cost)
-		to_chat(src, "<span class='warning'>Not enough energy for that ability!</span>")
+		to_chat(usr, "<span class='warning'>Not enough energy for that ability!</span>")
 		return FALSE
 	else if(ability_flags & AB_PHASE_SHIFTED)
-		to_chat(src, "<span class='warning'>You can't use that while phase shifted!</span>")
+		to_chat(usr, "<span class='warning'>You can't use that while phase shifted!</span>")
 		return FALSE
 
 	playsound(src, 'sound/effects/bamf.ogg', 75, 1)

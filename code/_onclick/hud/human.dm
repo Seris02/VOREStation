@@ -317,19 +317,16 @@
 	item_use_icon.icon = HUD.ui_style
 	item_use_icon.color = HUD.ui_color
 	item_use_icon.alpha = HUD.ui_alpha
-	infodisplay += item_use_icon
 
 	gun_move_icon = new /obj/screen/gun/move(null)
 	gun_move_icon.icon = HUD.ui_style
 	gun_move_icon.color = HUD.ui_color
 	gun_move_icon.alpha = HUD.ui_alpha
-	infodisplay += gun_move_icon
 
 	radio_use_icon = new /obj/screen/gun/radio(null)
 	radio_use_icon.icon = HUD.ui_style
 	radio_use_icon.color = HUD.ui_color
 	radio_use_icon.alpha = HUD.ui_alpha
-	infodisplay += radio_use_icon
 
 	if(client)
 		client.screen = list()

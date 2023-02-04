@@ -355,7 +355,7 @@
 /obj/item/proc/equipped(var/mob/user, var/slot)
 	hud_layerise()
 	user.position_hud_item(src,slot)
-	if(user.client)	user.client.screen |= src
+	user.hud_used?.update_item(src, user)
 	if(user.pulling == src) user.stop_pulling()
 	if((slot_flags & slot))
 		if(equip_sound)

@@ -158,15 +158,16 @@
 	var/hidden = 0
 
 /obj/screen/movable/action_button/hide_toggle/Click()
-	usr.hud_used.action_buttons_hidden = !usr.hud_used.action_buttons_hidden
+	var/mob/clicking = !isobserver(usr) && hud?.mymob ? hud.mymob : usr
+	clicking.hud_used.action_buttons_hidden = !clicking.hud_used.action_buttons_hidden
 
-	hidden = usr.hud_used.action_buttons_hidden
+	hidden = clicking.hud_used.action_buttons_hidden
 	if(hidden)
 		name = "Show Buttons"
 	else
 		name = "Hide Buttons"
 	UpdateIcon()
-	usr.update_action_buttons()
+	clicking.update_action_buttons()
 
 
 /obj/screen/movable/action_button/hide_toggle/proc/InitialiseIcon(var/mob/living/user)

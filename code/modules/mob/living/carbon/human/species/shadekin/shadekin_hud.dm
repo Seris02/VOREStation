@@ -20,9 +20,8 @@
 
 /obj/screen/movable/ability_master/shadekin/update_abilities(forced = 0, mob/user)		//Different proc to prevent indexing
 	update_icon()
-	if(user && user.client)
-		if(!(src in user.client.screen))
-			user.client.screen += src
+	if (user && user.hud_used)
+		user.hud_used.add_screen(src)
 	for(var/obj/screen/ability/ability in ability_objects)
 		ability.update_icon(forced)
 
