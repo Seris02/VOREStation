@@ -1,6 +1,5 @@
 /mob/living/carbon/human/create_mob_hud(datum/hud/HUD)
 	..()
-
 	var/datum/hud_data/hud_data
 	if(species?.hud)
 		hud_data = species.hud
@@ -14,11 +13,13 @@
 	var/other = list()
 	var/hotkeybuttons = list()
 	var/slot_info = list()
+	var/infodisplay = list()
 
 	HUD.adding = adding
 	HUD.other = other
 	HUD.hotkeybuttons = hotkeybuttons //These can be disabled for hotkey users
 	HUD.slot_info = slot_info
+	HUD.infodisplay = infodisplay
 
 	var/list/hud_elements = list()
 	var/obj/screen/using
@@ -247,6 +248,7 @@
 			internals.icon_state = "internal1"
 		internals.name = "internal"
 		internals.screen_loc = ui_internal
+		infodisplay += internals
 		hud_elements |= internals
 
 	if(hud_data.has_warnings)
@@ -255,37 +257,44 @@
 		healths.icon_state = "health0"
 		healths.name = "health"
 		healths.screen_loc = ui_health
+		infodisplay += healths
 		hud_elements |= healths
 
 	//VOREStation Addition begin
 	shadekin_display = new /obj/screen/shadekin()
 	shadekin_display.screen_loc = ui_shadekin_display
 	shadekin_display.icon_state = "shadekin"
+	infodisplay += shadekin_display
 	hud_elements |= shadekin_display
 
 	xenochimera_danger_display = new /obj/screen/xenochimera/danger_level()
 	xenochimera_danger_display.screen_loc = ui_xenochimera_danger_display
 	xenochimera_danger_display.icon_state = "danger00"
+	infodisplay += xenochimera_danger_display
 	hud_elements |= xenochimera_danger_display
 	//VOREStation Addition end
 
 	ling_chem_display = new /obj/screen/ling/chems()
 	ling_chem_display.screen_loc = ui_ling_chemical_display
 	ling_chem_display.icon_state = "ling_chems"
+	infodisplay += ling_chem_display
 	hud_elements |= ling_chem_display
 
 	wiz_instability_display = new /obj/screen/wizard/instability()
 	wiz_instability_display.screen_loc = ui_wiz_instability_display
 	wiz_instability_display.icon_state = "wiz_instability_none"
+	infodisplay += wiz_instability_display
 	hud_elements |= wiz_instability_display
 
 	wiz_energy_display = new/obj/screen/wizard/energy()
 	wiz_energy_display.screen_loc = ui_wiz_energy_display
 	wiz_energy_display.icon_state = "wiz_energy"
+	infodisplay += wiz_energy_display
 	hud_elements |= wiz_energy_display
 
 
 	pain = new /obj/screen( null )
+	infodisplay += pain
 
 	zone_sel = new /obj/screen/zone_sel( null )
 	zone_sel.icon = HUD.ui_style
@@ -293,6 +302,7 @@
 	zone_sel.alpha = HUD.ui_alpha
 	zone_sel.cut_overlays()
 	zone_sel.update_icon()
+	infodisplay += zone_sel
 	hud_elements |= zone_sel
 
 	//Handle the gun settings buttons
@@ -300,22 +310,26 @@
 	gun_setting_icon.icon = HUD.ui_style
 	gun_setting_icon.color = HUD.ui_color
 	gun_setting_icon.alpha = HUD.ui_alpha
+	infodisplay += gun_setting_icon
 	hud_elements |= gun_setting_icon
 
 	item_use_icon = new /obj/screen/gun/item(null)
 	item_use_icon.icon = HUD.ui_style
 	item_use_icon.color = HUD.ui_color
 	item_use_icon.alpha = HUD.ui_alpha
+	infodisplay += item_use_icon
 
 	gun_move_icon = new /obj/screen/gun/move(null)
 	gun_move_icon.icon = HUD.ui_style
 	gun_move_icon.color = HUD.ui_color
 	gun_move_icon.alpha = HUD.ui_alpha
+	infodisplay += gun_move_icon
 
 	radio_use_icon = new /obj/screen/gun/radio(null)
 	radio_use_icon.icon = HUD.ui_style
 	radio_use_icon.color = HUD.ui_color
 	radio_use_icon.alpha = HUD.ui_alpha
+	infodisplay += radio_use_icon
 
 	if(client)
 		client.screen = list()

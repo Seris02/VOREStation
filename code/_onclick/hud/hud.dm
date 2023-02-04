@@ -198,6 +198,8 @@ var/list/global_huds = list(
 
 	var/list/minihuds = list()
 
+	var/list/infodisplay = list()
+
 /datum/hud/New(mob/owner)
 	mymob = owner
 	instantiate()
@@ -227,8 +229,36 @@ var/list/global_huds = list(
 	QDEL_LIST(ammo_hud_list)
 	mymob = null
 
-/datum/hud/proc/hidden_inventory_update()
+/datum/hud/proc/show_to(var/mob/screenmob)
+	if (!mymob) return
+	screenmob = screenmob || mymob
+
+	if (!screenmob.client) return
+
+	clear_all_but_planemasters(screenmob)
+	screenmob.client.screen += other
+	screenmob.client.screen += adding + hotkeybuttons
+	screenmob.client.screen += infodisplay
+	screenmob.client.screen += other_important
+	screenmob.add_click_catcher()
+
+	hidden_inventory_update(screenmob)
+	persistant_inventory_update(screenmob)
+	screenmob.reload_fullscreen()
+
+/datum/hud/proc/clear_all_but_planemasters(var/mob/screenmob)
+	if (!mymob) return
+	screenmob = screenmob || mymob
+
+	if (!screenmob.client) return
+	for (var/obj/screen/screen as anything in screenmob.client.screen)
+		if (istype(screen, /obj/screen/plane_master))
+			continue
+		screenmob.client.screen -= screen
+
+/datum/hud/proc/hidden_inventory_update(var/mob/screenmob)
 	if(!mymob) return
+	screenmob = screenmob || mymob
 	if(ishuman(mymob))
 		var/mob/living/carbon/human/H = mymob
 		for(var/gear_slot in H.species.hud.gear)
@@ -236,49 +266,85 @@ var/list/global_huds = list(
 			if(inventory_shown && hud_shown)
 				switch(hud_data["slot"])
 					if(slot_head)
-						if(H.head)      H.head.screen_loc =      hud_data["loc"]
+						if(H.head)
+							H.head.screen_loc = hud_data["loc"]
+							screenmob.client.screen += H.head
 					if(slot_shoes)
-						if(H.shoes)     H.shoes.screen_loc =     hud_data["loc"]
+						if(H.shoes)
+							H.shoes.screen_loc = hud_data["loc"]
+							screenmob.client.screen += H.shoes
 					if(slot_l_ear)
-						if(H.l_ear)     H.l_ear.screen_loc =     hud_data["loc"]
+						if(H.l_ear)
+							H.l_ear.screen_loc =     hud_data["loc"]
+							screenmob.client.screen += H.l_ear
 					if(slot_r_ear)
-						if(H.r_ear)     H.r_ear.screen_loc =     hud_data["loc"]
+						if(H.r_ear)
+							H.r_ear.screen_loc =     hud_data["loc"]
+							screenmob.client.screen += H.r_ear
 					if(slot_gloves)
-						if(H.gloves)    H.gloves.screen_loc =    hud_data["loc"]
+						if(H.gloves)
+							H.gloves.screen_loc =    hud_data["loc"]
+							screenmob.client.screen += H.gloves
 					if(slot_glasses)
-						if(H.glasses)   H.glasses.screen_loc =   hud_data["loc"]
+						if(H.glasses)
+							H.glasses.screen_loc =   hud_data["loc"]
+							screenmob.client.screen += H.glasses
 					if(slot_w_uniform)
-						if(H.w_uniform) H.w_uniform.screen_loc = hud_data["loc"]
+						if(H.w_uniform)
+							H.w_uniform.screen_loc = hud_data["loc"]
+							screenmob.client.screen += H.w_uniform
 					if(slot_wear_suit)
-						if(H.wear_suit) H.wear_suit.screen_loc = hud_data["loc"]
+						if(H.wear_suit)
+							H.wear_suit.screen_loc = hud_data["loc"]
+							screenmob.client.screen += H.wear_suit
 					if(slot_wear_mask)
-						if(H.wear_mask) H.wear_mask.screen_loc = hud_data["loc"]
+						if(H.wear_mask)
+							H.wear_mask.screen_loc = hud_data["loc"]
+							screenmob.client.screen += H.wear_mask
 			else
 				switch(hud_data["slot"])
 					if(slot_head)
-						if(H.head)      H.head.screen_loc =      null
+						if(H.head)
+							H.head.screen_loc =      null
+							screenmob.client.screen -= H.head
 					if(slot_shoes)
-						if(H.shoes)     H.shoes.screen_loc =     null
+						if(H.shoes)
+							H.shoes.screen_loc =     null
+							screenmob.client.screen -= H.shoes
 					if(slot_l_ear)
-						if(H.l_ear)     H.l_ear.screen_loc =     null
+						if(H.l_ear)
+							H.l_ear.screen_loc =     null
+							screenmob.client.screen -= H.l_ear
 					if(slot_r_ear)
-						if(H.r_ear)     H.r_ear.screen_loc =     null
+						if(H.r_ear)
+							H.r_ear.screen_loc =     null
+							screenmob.client.screen -= H.r_ear
 					if(slot_gloves)
-						if(H.gloves)    H.gloves.screen_loc =    null
+						if(H.gloves)
+							H.gloves.screen_loc =    null
+							screenmob.client.screen -= H.gloves
 					if(slot_glasses)
-						if(H.glasses)   H.glasses.screen_loc =   null
+						if(H.glasses)
+							H.glasses.screen_loc =   null
+							screenmob.client.screen -= H.glasses
 					if(slot_w_uniform)
-						if(H.w_uniform) H.w_uniform.screen_loc = null
+						if(H.w_uniform)
+							H.w_uniform.screen_loc = null
+							screenmob.client.screen -= H.w_uniform
 					if(slot_wear_suit)
-						if(H.wear_suit) H.wear_suit.screen_loc = null
+						if(H.wear_suit)
+							H.wear_suit.screen_loc = null
+							screenmob.client.screen -= H.wear_suit
 					if(slot_wear_mask)
-						if(H.wear_mask) H.wear_mask.screen_loc = null
+						if(H.wear_mask)
+							H.wear_mask.screen_loc = null
+							screenmob.client.screen -= H.wear_mask
 
 
-/datum/hud/proc/persistant_inventory_update()
+/datum/hud/proc/persistant_inventory_update(var/mob/screenmob)
 	if(!mymob)
 		return
-
+	screenmob = screenmob || mymob
 	if(ishuman(mymob))
 		var/mob/living/carbon/human/H = mymob
 		for(var/gear_slot in H.species.hud.gear)
@@ -286,31 +352,55 @@ var/list/global_huds = list(
 			if(hud_shown)
 				switch(hud_data["slot"])
 					if(slot_s_store)
-						if(H.s_store) H.s_store.screen_loc = hud_data["loc"]
+						if(H.s_store)
+							H.s_store.screen_loc = hud_data["loc"]
+							screenmob.client.screen += H.s_store
 					if(slot_wear_id)
-						if(H.wear_id) H.wear_id.screen_loc = hud_data["loc"]
+						if(H.wear_id)
+							H.wear_id.screen_loc = hud_data["loc"]
+							screenmob.client.screen += H.wear_id
 					if(slot_belt)
-						if(H.belt)    H.belt.screen_loc =    hud_data["loc"]
+						if(H.belt)
+							H.belt.screen_loc =    hud_data["loc"]
+							screenmob.client.screen += H.belt
 					if(slot_back)
-						if(H.back)    H.back.screen_loc =    hud_data["loc"]
+						if(H.back)
+							H.back.screen_loc =    hud_data["loc"]
+							screenmob.client.screen += H.back
 					if(slot_l_store)
-						if(H.l_store) H.l_store.screen_loc = hud_data["loc"]
+						if(H.l_store)
+							H.l_store.screen_loc = hud_data["loc"]
+							screenmob.client.screen += H.l_store
 					if(slot_r_store)
-						if(H.r_store) H.r_store.screen_loc = hud_data["loc"]
+						if(H.r_store)
+							H.r_store.screen_loc = hud_data["loc"]
+							screenmob.client.screen += H.r_store
 			else
 				switch(hud_data["slot"])
 					if(slot_s_store)
-						if(H.s_store) H.s_store.screen_loc = null
+						if(H.s_store)
+							H.s_store.screen_loc = null
+							screenmob.client.screen -= H.s_store
 					if(slot_wear_id)
-						if(H.wear_id) H.wear_id.screen_loc = null
+						if(H.wear_id)
+							H.wear_id.screen_loc = null
+							screenmob.client.screen -= H.wear_id
 					if(slot_belt)
-						if(H.belt)    H.belt.screen_loc =    null
+						if(H.belt)
+							H.belt.screen_loc =    null
+							screenmob.client.screen -= H.belt
 					if(slot_back)
-						if(H.back)    H.back.screen_loc =    null
+						if(H.back)
+							H.back.screen_loc =    null
+							screenmob.client.screen -= H.back
 					if(slot_l_store)
-						if(H.l_store) H.l_store.screen_loc = null
+						if(H.l_store)
+							H.l_store.screen_loc = null
+							screenmob.client.screen -= H.l_store
 					if(slot_r_store)
-						if(H.r_store) H.r_store.screen_loc = null
+						if(H.r_store)
+							H.r_store.screen_loc = null
+							screenmob.client.screen -= H.r_store
 
 
 /datum/hud/proc/instantiate()
