@@ -27,10 +27,12 @@
 
 /mob/living/dual_control/Life()
 	life_tick++
-	if (client && life_tick % 10 == 0) //20 seconds
+	if (client && life_tick % 5 == 0) //10 seconds
 		..()
-		update_hud(life_tick % 100 != 0)
+		update_hud(life_tick % 30 != 0) //update everything every minute
 		if (controlling)
+			sight = controlling.sight
+			see_invisible = controlling.see_invisible
 			stat = controlling.stat
 			blinded = controlling.blinded
 			sleeping = controlling.sleeping
@@ -40,8 +42,6 @@
 
 /mob/living/dual_control/update_hud(planes_only = TRUE)
 	if (!controlling || !client) return
-	sight = controlling.sight
-	see_invisible = controlling.see_invisible
 	if (current_hud != controlling.hud_used)
 		current_hud?.remove_viewer(src, FALSE)
 		if (controlling.hud_used)
@@ -96,7 +96,11 @@
 	return controlling.emote(act, m_type, message)
 
 /mob/living/dual_control/proc/move_controlling(n, direct)
-	if (!controlling || !controlling.canmove) return
+	if (!controlling) return
+	if (controlling.incorporeal_move)
+		Process_Incorpmove(direct)
+		return
+	if (!controlling.canmove) return
 	var/total_delay = controlling.movement_delay(n, direct)
 	if(controlling.confused)
 		switch(controlling.m_intent)
@@ -114,6 +118,63 @@
 	controlling.SelfMove(n, direct, total_delay)
 	if((direct & (direct - 1)) && controlling.loc == n)
 		controlling.setMoveCooldown(total_delay * SQRT_TWO)
+
+/mob/living/dual_control/proc/Process_Incorpmove(direct)
+	var/turf/mobloc = get_turf(controlling)
+
+	switch(controlling.incorporeal_move)
+		if(1)
+			var/turf/T = get_step(controlling, direct)
+			if(!T)
+				return
+			if(controlling.check_holy(T))
+				to_chat(controlling, "<span class='warning'>You cannot get past holy grounds while you are in this plane of existence!</span>")
+				return
+			else
+				controlling.forceMove(get_step(controlling, direct))
+				controlling.dir = direct
+		if(2)
+			if(prob(50))
+				var/locx
+				var/locy
+				switch(direct)
+					if(NORTH)
+						locx = mobloc.x
+						locy = (mobloc.y+2)
+						if(locy>world.maxy)
+							return
+					if(SOUTH)
+						locx = mobloc.x
+						locy = (mobloc.y-2)
+						if(locy<1)
+							return
+					if(EAST)
+						locy = mobloc.y
+						locx = (mobloc.x+2)
+						if(locx>world.maxx)
+							return
+					if(WEST)
+						locy = mobloc.y
+						locx = (mobloc.x-2)
+						if(locx<1)
+							return
+					else
+						return
+				controlling.forceMove(locate(locx,locy,mobloc.z))
+				spawn(0)
+					var/limit = 2//For only two trailing shadows.
+					for(var/turf/T in getline(mobloc, controlling.loc))
+						spawn(0)
+							anim(T,controlling,'icons/mob/mob.dmi',,"shadow",,controlling.dir)
+						limit--
+						if(limit<=0)	break
+			else
+				spawn(0)
+					anim(mobloc,controlling,'icons/mob/mob.dmi',,"shadow",,controlling.dir)
+				controlling.forceMove(get_step(controlling, direct))
+			controlling.dir = direct
+	controlling.Post_Incorpmove()
+	return
 
 /mob/living/dual_control/facedir(ndir)
 	if (!controlling) return
@@ -208,19 +269,6 @@
 /mob/living/dual_control/face_atom(var/atom/A)
 	if (!controlling) return
 	controlling.face_atom(A)
-
-/mob/living/dual_control/insidePanel()
-	set name = "Vore Panel"
-	set category = "IC"
-
-	if(!vorePanel)
-		log_debug("[src] ([type], \ref[src]) didn't have a vorePanel and tried to use the verb.")
-		vorePanel = new(controlling||src)
-
-	if (vorePanel.host != controlling)
-		qdel(vorePanel)
-		vorePanel = new(controlling)
-	vorePanel.tgui_interact(src)
 
 /obj/item/weapon/pen/debug
 /obj/item/weapon/pen/debug/attack(mob/living/M, mob/living/user)

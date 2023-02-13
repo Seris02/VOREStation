@@ -181,6 +181,10 @@
 	if(my_mob.transforming)
 		return
 
+	if (istype(my_mob, /mob/living/dual_control))
+		my_mob:move_controlling(n, direct)
+		return
+
 	if(isliving(my_mob))
 		var/mob/living/L = my_mob
 		if(L.incorporeal_move)//Move though walls
@@ -200,9 +204,6 @@
 	// Can't move
 	if(!my_mob.canmove)
 		return
-
-	if (istype(my_mob, /mob/living/dual_control))
-		my_mob:move_controlling(n, direct)
 
 	// Relaymove could handle it
 	if(my_mob.machine)

@@ -461,7 +461,7 @@
 				clicking:toggle_throw_mode()
 		if("drop")
 			if(clicking.client)
-				clicking.client.drop_item()
+				clicking.drop_item()
 
 		if("module")
 			if(isrobot(clicking))
