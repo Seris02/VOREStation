@@ -141,12 +141,14 @@
 		user.remove_from_mob(W)
 		qdel(ore)
 
-/obj/item/weapon/storage/bag/ore/remove_from_storage(obj/item/W as obj, atom/new_location)
+/obj/item/weapon/storage/bag/ore/remove_from_storage(obj/item/W as obj, atom/new_location, mob/user = null)
 	if(!istype(W)) return 0
+
+	user = user||usr
 
 	if(new_location)
 		if(ismob(loc))
-			W.dropped(usr)
+			W.dropped(user)
 		if(ismob(new_location))
 			W.hud_layerise()
 		else
@@ -302,9 +304,11 @@
 
 
 // Modified handle_item_insertion.  Would prefer not to, but...
-/obj/item/weapon/storage/bag/sheetsnatcher/handle_item_insertion(obj/item/W as obj, prevent_warning = 0)
+/obj/item/weapon/storage/bag/sheetsnatcher/handle_item_insertion(obj/item/W as obj, prevent_warning = 0, mob/user = null)
 	var/obj/item/stack/material/S = W
 	if(!istype(S)) return 0
+
+	user = user||usr
 
 	var/amount
 	var/inserted = 0
@@ -324,16 +328,16 @@
 			inserted = 1
 			break
 
-	if(!inserted)
-		usr.remove_from_mob(S)
-		if (usr.client && usr.s_active != src)
-			usr.client.screen -= S
+	if(!inserted && user)
+		user.remove_from_mob(S)
+		if (user.hud_used && usr.s_active != src)
+			user.hud_used.remove_screen(S)
 		S.dropped(usr)
 		S.loc = src
 
-	orient2hud(usr)
-	if(usr.s_active)
-		usr.s_active.show_to(usr)
+	orient2hud(user)
+	if(user.s_active)
+		user.s_active.show_to(user)
 	update_icon()
 	return 1
 

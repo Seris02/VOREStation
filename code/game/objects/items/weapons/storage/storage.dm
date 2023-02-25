@@ -190,44 +190,44 @@
 	if(user.s_active)
 		user.s_active.hide_from(user)
 
-	var/client/C = user.client
-	if(!C)
-		return
+	var/datum/hud/hud = user.hud_used
+	if (!hud) return
 
 	if(storage_slots)
-		C.screen += src.boxes
+		hud.add_screen(src.boxes)
 		create_slot_catchers()
-		C.screen += src.box_catchers
+		hud.add_screen(src.box_catchers)
 	else
-		C.screen += src.storage_start
-		C.screen += src.storage_continue
-		C.screen += src.storage_end
+		hud.add_screen(src.storage_start)
+		hud.add_screen(src.storage_continue)
+		hud.add_screen(src.storage_end)
 
-	C.screen += src.closer
-	C.screen += src.contents
+	hud.add_screen(src.closer)
+	hud.add_screen(src.contents)
 
 	user.s_active = src
 	LAZYDISTINCTADD(is_seeing,user)
 
 /obj/item/weapon/storage/proc/hide_from(mob/user as mob)
-	var/client/C = user.client
 	LAZYREMOVE(is_seeing,user)
 
-	if(!C)
-		if(!LAZYLEN(is_seeing))
-			clear_slot_catchers()
-		return
+	if(!LAZYLEN(is_seeing))
+		clear_slot_catchers()
+	return
+
+	var/datum/hud/hud = user.hud_used
+	if (!hud) return
 
 	if(storage_slots)
-		C.screen -= src.boxes
-		C.screen -= src.box_catchers
+		hud.remove_screen(src.boxes)
+		hud.remove_screen(box_catchers)
 	else
-		C.screen -= src.storage_start
-		C.screen -= src.storage_continue
-		C.screen -= src.storage_end
+		hud.remove_screen(storage_start)
+		hud.remove_screen(src.storage_continue)
+		hud.remove_screen(src.storage_end)
 
-	C.screen -= src.closer
-	C.screen -= src.contents
+	hud.remove_screen(src.closer)
+	hud.remove_screen(src.contents)
 
 	if(user.s_active == src)
 		user.s_active = null
@@ -257,7 +257,7 @@
 /obj/item/weapon/storage/proc/can_see_contents()
 	var/list/cansee = list()
 	for(var/mob/M in is_seeing)
-		if(M.s_active == src && M.client)
+		if(M.s_active == src && !M.is_SSD())
 			cansee |= M
 		else
 			LAZYREMOVE(is_seeing,M)
@@ -276,7 +276,7 @@
 /obj/item/weapon/storage/proc/clear_slot_catchers()
 	if(box_catchers)
 		for(var/mob/M in is_seeing)
-			M.client?.screen -= box_catchers
+			M.hud_used?.remove_screen(box_catchers)
 		QDEL_LIST_NULL(box_catchers)
 
 //This proc draws out the inventory and places the items on it. tx and ty are the upper left tile and mx, my are the bottm right.
@@ -433,8 +433,10 @@
 
 //This proc return 1 if the item can be picked up and 0 if it can't.
 //Set the stop_messages to stop it from printing messages
-/obj/item/weapon/storage/proc/can_be_inserted(obj/item/W as obj, stop_messages = 0)
+/obj/item/weapon/storage/proc/can_be_inserted(obj/item/W as obj, stop_messages = 0, mob/user = null)
 	if(!istype(W)) return //Not an item
+
+	user = user||usr
 
 	if(usr && usr.isEquipped(W) && !usr.canUnEquip(W))
 		return 0
@@ -482,34 +484,36 @@
 //This proc handles items being inserted. It does not perform any checks of whether an item can or can't be inserted. That's done by can_be_inserted()
 //The stop_warning parameter will stop the insertion message from being displayed. It is intended for cases where you are inserting multiple items at once,
 //such as when picking up all the items on a tile with one click.
-/obj/item/weapon/storage/proc/handle_item_insertion(obj/item/W as obj, prevent_warning = 0)
+/obj/item/weapon/storage/proc/handle_item_insertion(obj/item/W as obj, prevent_warning = 0, mob/user = null)
 	if(!istype(W)) return 0
 
-	if(!stall_insertion(W, usr)) // Can sleep here and delay removal for slow storage
+	user = user||usr
+
+	if(!stall_insertion(W, user)) // Can sleep here and delay removal for slow storage
 		return 0
 
-	if(usr)
-		usr.remove_from_mob(W,target = src) //If given a target, handles forceMove()
+	if(user)
+		user.remove_from_mob(W,target = src) //If given a target, handles forceMove()
 		W.on_enter_storage(src)
-		if (usr.client && usr.s_active != src)
-			usr.client.screen -= W
-		W.dropped(usr)
-		add_fingerprint(usr)
+		if (usr.hud_used && usr.s_active != src)
+			user.hud_used.remove_screen(W)
+		W.dropped(user)
+		add_fingerprint(user)
 		if (use_sound)
 			playsound(src, src.use_sound, 50, 0, -5) //Something broke "add item to container" sounds, this is a hacky fix.
 
 		if(!prevent_warning)
-			for(var/mob/M in viewers(usr, null))
-				if (M == usr)
-					to_chat(usr, "<span class='notice'>You put \the [W] into [src].</span>")
+			for(var/mob/M in viewers(user, null))
+				if (M == user)
+					to_chat(user, "<span class='notice'>You put \the [W] into [src].</span>")
 				else if (M in range(1)) //If someone is standing close enough, they can tell what it is...
-					M.show_message("<span class='notice'>\The [usr] puts [W] into [src].</span>")
+					M.show_message("<span class='notice'>\The [user] puts [W] into [src].</span>")
 				else if (W && W.w_class >= 3) //Otherwise they can only see large or normal items from a distance...
-					M.show_message("<span class='notice'>\The [usr] puts [W] into [src].</span>")
+					M.show_message("<span class='notice'>\The [user] puts [W] into [src].</span>")
 
-		src.orient2hud(usr)
+		src.orient2hud(user)
 		if(usr.s_active)
-			usr.s_active.show_to(usr)
+			usr.s_active.show_to(user)
 	else
 		W.forceMove(src)
 		W.on_enter_storage(src)
@@ -518,10 +522,12 @@
 	return 1
 
 //Call this proc to handle the removal of an item from the storage item. The item will be moved to the atom sent as new_target
-/obj/item/weapon/storage/proc/remove_from_storage(obj/item/W as obj, atom/new_location)
+/obj/item/weapon/storage/proc/remove_from_storage(obj/item/W as obj, atom/new_location, mob/user = null)
 	if(!istype(W)) return 0
 
-	if(!stall_removal(W, usr)) // Can sleep here and delay removal for slow storage
+	user = user||usr
+
+	if(!stall_removal(W, user)) // Can sleep here and delay removal for slow storage
 		return 0
 
 	if(istype(src, /obj/item/weapon/storage/fancy))
@@ -529,14 +535,14 @@
 		F.update_icon(1)
 
 	for(var/mob/M in is_seeing)
-		if(!M.client || QDELETED(M))
+		if(M.is_SSD() || QDELETED(M))
 			hide_from(M)
 		else
-			M.client.screen -= W
+			M.hud_used?.remove_screen(W)
 
 	if(new_location)
 		if(ismob(loc))
-			W.dropped(usr)
+			W.dropped(user)
 		if(ismob(new_location))
 			W.hud_layerise()
 		else
@@ -866,9 +872,10 @@
 	overlays = somethings
 
 /atom/movable/storage_slot/Click()
+	var/mob/clicking = !isobserver(usr) && hud?.mymob ? hud.mymob : usr
 	var/obj/item/I = held_item?.resolve()
 	if(I)
-		usr.ClickOn(I)
+		clicking.ClickOn(I)
 	return 1
 
 // Allows micros to drag themselves into storage items
