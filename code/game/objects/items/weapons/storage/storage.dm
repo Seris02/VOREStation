@@ -211,12 +211,11 @@
 /obj/item/weapon/storage/proc/hide_from(mob/user as mob)
 	LAZYREMOVE(is_seeing,user)
 
-	if(!LAZYLEN(is_seeing))
-		clear_slot_catchers()
-	return
-
 	var/datum/hud/hud = user.hud_used
-	if (!hud) return
+	if (!hud)
+		if(!LAZYLEN(is_seeing))
+			clear_slot_catchers()
+		return
 
 	if(storage_slots)
 		hud.remove_screen(src.boxes)
@@ -585,7 +584,7 @@
 				if(LP.uses < LP.max_uses)
 					LP.add_uses(1)
 					amt_inserted++
-					remove_from_storage(L, T)
+					remove_from_storage(L, T, user)
 					qdel(L)
 		if(amt_inserted)
 			to_chat(user, "You inserted [amt_inserted] light\s into \the [LP.name]. You have [LP.uses] light\s remaining.")
@@ -608,7 +607,7 @@
 				to_chat(user, "<span class='warning'>God damn it!</span>")
 
 	W.add_fingerprint(user)
-	return handle_item_insertion(W)
+	return handle_item_insertion(W, user=user)
 
 /obj/item/weapon/storage/dropped(mob/user as mob)
 	return
@@ -648,7 +647,7 @@
 			failure = 1
 			continue
 		success = 1
-		handle_item_insertion(I, 1)	//The 1 stops the "You put the [src] into [S]" insertion message from being displayed.
+		handle_item_insertion(I, 1, user)	//The 1 stops the "You put the [src] into [S]" insertion message from being displayed.
 	if(success && !failure)
 		to_chat(user, "<span class='notice'>You put everything in [src].</span>")
 	else if(success)
@@ -872,10 +871,10 @@
 	overlays = somethings
 
 /atom/movable/storage_slot/Click()
-	var/mob/clicking = !isobserver(usr) && hud?.mymob ? hud.mymob : usr
+	//var/mob/clicking = !isobserver(usr) && hud?.mymob ? hud.mymob : usr
 	var/obj/item/I = held_item?.resolve()
 	if(I)
-		clicking.ClickOn(I)
+		usr.ClickOn(I)
 	return 1
 
 // Allows micros to drag themselves into storage items
@@ -903,6 +902,6 @@
 
 	// Scoop and insert target into storage
 	var/obj/item/weapon/holder/H = new user.holder_type(get_turf(user), user)
-	src.handle_item_insertion(H, 1)
+	src.handle_item_insertion(H, 1, user)
 	to_chat(user, "<span class='notice'>You climb into \the [src].</span>")
 	return ..()

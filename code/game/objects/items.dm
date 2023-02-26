@@ -243,7 +243,7 @@
 	var/old_loc = src.loc
 	if (istype(src.loc, /obj/item/weapon/storage))
 		var/obj/item/weapon/storage/S = src.loc
-		if(!S.remove_from_storage(src))
+		if(!S.remove_from_storage(src, user=user))
 			return
 
 	src.pickup(user)
@@ -290,7 +290,7 @@
 					S.gather_all(src.loc, user)
 
 			else if(S.can_be_inserted(src))
-				S.handle_item_insertion(src)
+				S.handle_item_insertion(src,user=user)
 	return
 
 /obj/item/proc/talk_into(mob/M as mob, text)

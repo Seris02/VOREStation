@@ -203,6 +203,8 @@ var/list/global_huds = list(
 
 	var/list/mob/viewers = list()
 
+	var/list/items_in_hud
+
 /datum/hud/New(mob/owner)
 	mymob = owner
 	instantiate()
@@ -211,6 +213,9 @@ var/list/global_huds = list(
 /datum/hud/Destroy()
 	. = ..()
 	qdel_null(minihuds)
+	QDEL_LIST(infodisplay)
+	QDEL_LIST(misc_screens)
+	items_in_hud.Cut()
 	grab_intent = null
 	hurt_intent = null
 	disarm_intent = null
@@ -283,6 +288,9 @@ var/list/global_huds = list(
 			add_screen(s)
 		return
 	else if (!istype(screen))
+		if (istype(screen, /atom/movable))
+			update_item(screen, mymob)
+			return
 		return
 	screen.hud = src
 	LAZYOR(misc_screens, screen)
@@ -302,6 +310,9 @@ var/list/global_huds = list(
 			remove_screen(s)
 		return
 	else if (!istype(screen))
+		if (istype(screen, /atom/movable))
+			update_item(screen, mymob, TRUE)
+			return
 		return
 	screen.hud = src
 	LAZYREMOVE(misc_screens, screen)
@@ -314,10 +325,13 @@ var/list/global_huds = list(
 			continue
 		M.client.screen -= screen
 
-/datum/hud/proc/update_item(var/item, var/mob/screenmob)
+/datum/hud/proc/update_item(var/item, var/mob/screenmob, var/remove = FALSE)
 	if(!mymob) return
 	screenmob = screenmob || mymob
-	screenmob.client?.screen |= item
+	if (remove)
+		screenmob.client?.screen -= item
+	else
+		screenmob.client?.screen |= item
 	if (screenmob == mymob && length(viewers))
 		for (var/mob/M as anything in viewers)
 			if (!M)
