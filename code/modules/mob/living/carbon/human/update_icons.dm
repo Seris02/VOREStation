@@ -900,10 +900,10 @@ var/global/list/damage_icon_parts = list() //see UpdateDamageIcon()
 	if(QDESTROYING(src))
 		return
 
-	if(client)
-		client.screen |= contents
-		if(hud_used)
-			hud_used.hidden_inventory_update() 	//Updates the screenloc of the items on the 'other' inventory bar
+	if(hud_used)
+		hud_used.clear_items(src, contents)
+		hud_used.update_item(contents)
+		hud_used.hidden_inventory_update() 	//Updates the screenloc of the items on the 'other' inventory bar
 
 //update whether handcuffs appears on our hud.
 /mob/living/carbon/proc/update_hud_handcuffed()

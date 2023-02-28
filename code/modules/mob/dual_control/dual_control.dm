@@ -95,6 +95,41 @@
 	if (!controlling) return
 	return controlling.emote(act, m_type, message)
 
+/mob/living/dual_control/verb/whisper(message as text)
+	if (!controlling) return
+	return controlling.whisper(message)
+
+/mob/living/dual_control/verb/say_verb(message as text)
+	if (!controlling) return
+	return controlling.say_verb(message)
+
+/mob/verb/me_verb(message as message)
+	set name = "Me"
+	set category = "IC"
+
+	if (!controlling || !message) return
+
+	if(say_disabled)	//This is here to try to identify lag problems
+		to_chat(usr, "<font color='red'>Speech is currently admin-disabled.</font>")
+		return
+	//VOREStation Addition Start
+	if(controlling.forced_psay)
+		controlling.pme(message)
+		return
+	//VOREStation Addition End
+
+	//VOREStation Edit Start
+	if(controlling.muffled)
+		return controlling.me_verb_subtle(message)
+	message = sanitize_or_reflect(message,src) //VOREStation Edit - Reflect too-long messages (within reason)
+	//VOREStation Edit End
+
+	set_typing_indicator(FALSE)
+	if(controlling.use_me)
+		controlling.custom_emote(usr.emote_type, message)
+	else
+		controlling.emote(message)
+
 /mob/living/dual_control/proc/move_controlling(n, direct)
 	if (!controlling) return
 	if (controlling.incorporeal_move)

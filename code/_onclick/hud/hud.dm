@@ -327,17 +327,39 @@ var/list/global_huds = list(
 
 /datum/hud/proc/update_item(var/item, var/mob/screenmob, var/remove = FALSE)
 	if(!mymob) return
+	if (islist(screen))
+		for (var/s as anything in screen)
+			update_item(s, screenmob, remove)
+		return
 	screenmob = screenmob || mymob
 	if (remove)
 		screenmob.client?.screen -= item
 	else
 		screenmob.client?.screen |= item
+	if (screenmob == mymob)
+		if (remove)
+			LAZYREMOVE(items_in_hud, item)
+		else
+			LAZYOR(items_in_hud, item)
+		if (length(viewers))
+			for (var/mob/M as anything in viewers)
+				if (!M)
+					viewers -= M
+					continue
+				update_item(item, M, remove)
+
+/datum/hud/proc/clear_items(var/mob/screenmob, var/list/except_for = null)
+	if(!mymob) return
+	screenmob = screenmob || mymob
 	if (screenmob == mymob && length(viewers))
 		for (var/mob/M as anything in viewers)
 			if (!M)
 				viewers -= M
 				continue
-			update_item(item, M)
+			clear_items(M)
+	screenmob.client?.screen -= (items_in_hud - except_for)
+	if (screenmob == mymob)
+		items_in_hud.Cut()
 
 /datum/hud/proc/hidden_inventory_update(var/mob/screenmob)
 	if(!mymob) return
